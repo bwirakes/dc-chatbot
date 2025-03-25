@@ -5,7 +5,6 @@ import { google } from '@ai-sdk/google';
 import { isTestEnvironment } from '../constants';
 import {
   chatModel,
-  reasoningModel,
   titleModel,
 } from './models.test';
 

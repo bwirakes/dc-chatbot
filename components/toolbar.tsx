@@ -1,18 +1,14 @@
 'use client';
 
-import { UseChatHelpers } from '@ai-sdk/react';
+import type { UseChatHelpers } from '@ai-sdk/react';
 import {
-  AnimatePresence,
   motion,
-  useMotionValue,
-  useTransform,
 } from 'framer-motion';
 import {
   type Dispatch,
   memo,
-  ReactNode,
+  type ReactNode,
   type SetStateAction,
-  useEffect,
   useRef,
   useState,
 } from 'react';
@@ -25,7 +21,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-import { ArrowUpIcon, StopIcon, SummarizeIcon } from './icons';
+import { StopIcon, SummarizeIcon } from './icons';
 
 type ToolProps = {
   description: string;
@@ -67,6 +63,7 @@ function Tool({
       <Tooltip>
         <TooltipTrigger asChild>
           <button
+            type="button"
             className="transition-all p-2 rounded-xl flex items-center justify-center gap-2 hover:bg-black/5 dark:hover:bg-white/5"
             onClick={executeClick}
           >
@@ -116,7 +113,7 @@ export function Toolbar({
     >
       <motion.div className="bg-card border shadow-md rounded-xl pointer-events-auto">
         <div className="flex flex-row gap-2 p-1 items-center">
-          {status === 'in_progress' ? (
+          {status === 'streaming' ? (
             <Tool
               description="Stop generating"
               icon={<StopIcon />}

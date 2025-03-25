@@ -1,5 +1,5 @@
 import {
-  UIMessage,
+  type UIMessage,
   appendResponseMessages,
   createDataStreamResponse,
   smoothStream,
@@ -107,7 +107,10 @@ export async function POST(request: Request) {
                              messageContent.toLowerCase().includes('columbia');
 
     // Determine which messaging approach to use
-    let messagingConfig;
+    let messagingConfig: {
+      messages?: any[];
+      system?: string;
+    };
     
     try {
       if (shouldLoadProbatePDF && isProbateRelated) {

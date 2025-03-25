@@ -19,7 +19,7 @@ interface ConsoleLog {
   message: string;
 }
 
-let consoleStorage: { [key: string]: ConsoleLog[] } = {};
+const consoleStorage: { [key: string]: ConsoleLog[] } = {};
 
 type ConsoleProps = {
   id: string;
@@ -75,7 +75,7 @@ function PureConsole({ id }: ConsoleProps) {
         },
       };
     },
-    [setConsoleOutputs],
+    [],
   );
 
   // Register console listener
@@ -120,7 +120,7 @@ function PureConsole({ id }: ConsoleProps) {
       <motion.div
         data-testid="console-minimized"
         layoutId={id}
-        className="fixed bottom-0 left-0 right-0 p-2 z-20 flex flex-row items-center"
+        className="fixed bottom-0 inset-x-0 p-2 z-20 flex flex-row items-center"
         onClick={() => setIsMinimized(false)}
       >
         <motion.div
@@ -151,14 +151,15 @@ function PureConsole({ id }: ConsoleProps) {
       >
         <div className="flex flex-row justify-between items-center p-2 border-b">
           <div className="flex flex-row items-center">
-            <Command size={14} className="mr-2" />
-            <div className="text-sm font-mono text-muted-foreground">
+            <Command size={14} />
+            <div className="text-sm font-mono text-muted-foreground ml-2">
               Console
             </div>
           </div>
 
           <div className="flex flex-row items-center gap-2">
             <button
+              type="button"
               className="p-1 hover:bg-accent hover:text-accent-foreground rounded"
               onClick={() => {
                 setConsoleOutputs((curr) => ({ ...curr, [id]: [] }));
@@ -170,10 +171,13 @@ function PureConsole({ id }: ConsoleProps) {
             </button>
 
             <button
+              type="button"
               className="p-1 hover:bg-accent hover:text-accent-foreground rounded"
               onClick={() => setIsMinimized(true)}
             >
-              <ArrowDownIcon size={14} className="text-muted-foreground" />
+              <div className="text-muted-foreground">
+                <ArrowDownIcon size={14} />
+              </div>
             </button>
           </div>
         </div>

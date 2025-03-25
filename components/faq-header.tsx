@@ -11,7 +11,7 @@ export function FAQHeader() {
       <SidebarToggle />
       <Link href="/" className="ml-auto">
         <Button variant="outline" size="sm" className="gap-2">
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="size-4" />
           <span className="hidden md:inline">Back to Chat</span>
         </Button>
       </Link>

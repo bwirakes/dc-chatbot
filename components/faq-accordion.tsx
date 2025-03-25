@@ -17,7 +17,7 @@ export function FAQAccordion({ items }: FAQAccordionProps) {
     <Accordion type="single" collapsible className="w-full">
       {items.map((item, index) => (
         <AccordionItem 
-          key={index} 
+          key={`faq-${item.question.substring(0, 10).replace(/\s+/g, '-').toLowerCase()}-${index}`} 
           value={`item-${index}`} 
           className="border border-muted rounded-lg mb-3 overflow-hidden transition-colors hover:border-muted-foreground/20"
         >

@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Button } from './ui/button';
-import { UseChatHelpers } from '@ai-sdk/react';
+import type { UseChatHelpers } from '@ai-sdk/react';
 
 interface SuggestedActionsProps {
   chatId: string;

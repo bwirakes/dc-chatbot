@@ -30,7 +30,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       success: true,
       contentLength,
-      excerpt: excerpt + '...',
+      excerpt: `${excerpt}...`,
       message: `Successfully retrieved PDF content (${contentLength} characters)`
     });
   } catch (error) {

@@ -35,7 +35,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
               }}
               className="flex flex-row gap-3 items-center group"
             >
-              <Flower className="text-[#FF9B82] w-6 h-6 sm:w-8 sm:h-8 transition-transform group-hover:rotate-45" />
+              <Flower className="text-[#FF9B82] size-6 sm:size-8 transition-transform group-hover:rotate-45" />
               <span className="text-2xl sm:text-3xl font-serif text-[hsl(var(--dark-text))] font-bold" style={{ fontFamily: 'var(--serif-font)' }}>
                 Stairway
               </span>

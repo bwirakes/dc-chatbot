@@ -1,6 +1,6 @@
 'use client';
 
-import type { Attachment, Message, UIMessage } from 'ai';
+import type { Attachment, UIMessage } from 'ai';
 import cx from 'classnames';
 import {
   useRef,
@@ -15,13 +15,13 @@ import {
 import { toast } from 'sonner';
 import { useLocalStorage, useWindowSize } from 'usehooks-ts';
 
-import { ArrowUpIcon, PaperclipIcon, StopIcon, FileIcon, ImageIcon } from './icons';
+import { ArrowUpIcon, PaperclipIcon, StopIcon, } from './icons';
 import { PreviewAttachment } from './preview-attachment';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { SuggestedActions } from './suggested-actions';
 import equal from 'fast-deep-equal';
-import { UseChatHelpers } from '@ai-sdk/react';
+import type { UseChatHelpers } from '@ai-sdk/react';
 
 function PureMultimodalInput({
   chatId,
