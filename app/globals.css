@@ -3,9 +3,61 @@
 @tailwind utilities;
 
 :root {
-    --foreground-rgb: 0, 0, 0;
-    --background-start-rgb: 214, 219, 220;
-    --background-end-rgb: 255, 255, 255;
+    /* Base colors */
+    --background: 0 0% 100%;
+    --foreground: 215 14% 10%;
+    
+    /* Main Color Palette */
+    --coral: 12 85% 77%;      /* Brightened from 9 68% 70% */
+    --dark-text: 0 0% 10%;    /* Kept dark for contrast */
+    --teal: 198 45% 35%;      /* Brightened from 198 37% 31% */
+    --light-gray: 220 17% 98%; /* Slightly brighter */
+    --border-gray: 220 13% 91%;
+    
+    /* New Accent Colors */
+    --cerulean-blue: 195 45% 35%;
+    --pale-kings-blue: 195 30% 80%;
+    --turquoise-green: 150 30% 75%;
+    
+    /* System colors */
+    --card: 0 0% 100%;
+    --card-foreground: 215 14% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 14% 10%;
+    --primary: 198 37% 31%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 9 68% 70%;
+    --secondary-foreground: 215 14% 10%;
+    --muted: 220 17% 97%;
+    --muted-foreground: 215 14% 10%;
+    --accent: 198 37% 31%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 198 37% 31%;
+    --radius: 0.5rem;
+    --orange-yellow: 40 100% 50%;
+    --serif-font: 'freight-display-pro', Georgia, serif;
+    --sans-serif-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    
+    /* Chart colors */
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    
+    /* Sidebar colors */
+    --sidebar-background: var(--light-gray);
+    --sidebar-foreground: 215 14% 10%;
+    --sidebar-primary: var(--teal);
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 220 17% 91%;
+    --sidebar-accent-foreground: 215 14% 10%;
+    --sidebar-border: var(--border-gray);
+    --sidebar-ring: var(--teal);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -59,38 +111,57 @@
         --sidebar-ring: 217.2 91.2% 59.8%;
     }
     .dark {
-        --background: 240 10% 3.9%;
-        --foreground: 0 0% 98%;
-        --card: 240 10% 3.9%;
-        --card-foreground: 0 0% 98%;
-        --popover: 240 10% 3.9%;
-        --popover-foreground: 0 0% 98%;
-        --primary: 0 0% 98%;
-        --primary-foreground: 240 5.9% 10%;
-        --secondary: 240 3.7% 15.9%;
-        --secondary-foreground: 0 0% 98%;
-        --muted: 240 3.7% 15.9%;
-        --muted-foreground: 240 5% 64.9%;
-        --accent: 240 3.7% 15.9%;
-        --accent-foreground: 0 0% 98%;
-        --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 240 3.7% 15.9%;
-        --input: 240 3.7% 15.9%;
-        --ring: 240 4.9% 83.9%;
-        --chart-1: 220 70% 50%;
-        --chart-2: 160 60% 45%;
-        --chart-3: 30 80% 55%;
-        --chart-4: 280 65% 60%;
-        --chart-5: 340 75% 55%;
-        --sidebar-background: 240 5.9% 10%;
-        --sidebar-foreground: 240 4.8% 95.9%;
-        --sidebar-primary: 224.3 76.3% 48%;
-        --sidebar-primary-foreground: 0 0% 100%;
-        --sidebar-accent: 240 3.7% 15.9%;
-        --sidebar-accent-foreground: 240 4.8% 95.9%;
-        --sidebar-border: 240 3.7% 15.9%;
-        --sidebar-ring: 217.2 91.2% 59.8%;
+      /* Base colors */
+      --background: 215 28% 10%;
+      --foreground: 210 40% 98%;
+      
+      /* Main Color Palette - Dark Mode Adjustments */
+      --coral: 12 85% 65%;      /* Darkened for dark mode */
+      --dark-text: 0 0% 90%;    /* Lightened for dark mode */
+      --teal: 198 45% 45%;      /* Brightened for dark mode */
+      --light-gray: 215 15% 15%; /* Darker for dark mode */
+      --border-gray: 215 10% 25%;
+      
+      /* New Accent Colors - Dark Mode Adjustments */
+      --cerulean-blue: 195 45% 45%;
+      --pale-kings-blue: 195 20% 35%;
+      --turquoise-green: 150 30% 40%;
+      
+      /* System colors - Dark Mode */
+      --card: 215 28% 10%;
+      --card-foreground: 210 40% 98%;
+      --popover: 215 28% 10%;
+      --popover-foreground: 210 40% 98%;
+      --primary: 198 45% 45%;
+      --primary-foreground: 215 28% 10%;
+      --secondary: 12 85% 65%;
+      --secondary-foreground: 210 40% 98%;
+      --muted: 215 15% 15%;
+      --muted-foreground: 210 40% 80%;
+      --accent: 198 45% 45%;
+      --accent-foreground: 210 40% 98%;
+      --destructive: 0 62.8% 40.6%;
+      --destructive-foreground: 210 40% 98%;
+      --border: 215 10% 25%;
+      --input: 215 10% 25%;
+      --ring: 198 45% 45%;
+      
+      /* Chart colors - Dark Mode */
+      --chart-1: 12 76% 55%;
+      --chart-2: 173 58% 45%;
+      --chart-3: 197 37% 50%;
+      --chart-4: 43 74% 60%;
+      --chart-5: 27 87% 60%;
+      
+      /* Sidebar colors - Dark Mode */
+      --sidebar-background: 215 25% 12%;
+      --sidebar-foreground: 210 40% 98%;
+      --sidebar-primary: 198 45% 45%;
+      --sidebar-primary-foreground: 215 28% 10%;
+      --sidebar-accent: 215 15% 20%;
+      --sidebar-accent-foreground: 210 40% 98%;
+      --sidebar-border: 215 10% 25%;
+      --sidebar-ring: 198 45% 45%;
     }
 }
 
@@ -161,4 +232,73 @@
 
 .suggestion-highlight {
     @apply bg-blue-200 hover:bg-blue-300 dark:hover:bg-blue-400/50 dark:text-blue-50 dark:bg-blue-500/40;
+}
+
+/* Add remaining utilities from user's request */
+
+/* Responsive text adjustments */
+@media (max-width: 640px) {
+  h1 {
+    letter-spacing: -0.02em;
+  }
+  
+  body {
+    font-size: 15px;
+  }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Prevent content shift on mobile when scrolling */
+html, body {
+  overflow-x: hidden;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--serif-font);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary));
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.8);
+}
+
+.prose li > p > img { /* Target images directly within <p> tags inside <li> in .prose */
+  display: block; /* Make image a block element to control margin */
+  margin-left: auto;
+  margin-right: auto; /* Center the image horizontally */
+  border-radius: 0.5rem; /* Optional: Rounded corners */
+  max-width: 300px; /* Set maximum width to 300px */
+  height: auto; /* Maintain aspect ratio */
+  margin-bottom: 0.5rem; /* Spacing between image and caption */
+}
+
+.prose li > p > em { /* Style the text caption (using <em> for captions for now) */
+  display: block; /* Make caption a block element */
+  text-align: center; /* Center the caption text */
+  font-size: 0.9em;
+  color: hsl(var(--dark-text)); /* Use your theme's dark text color */
+  opacity: 0.8; /* Slightly faded caption */
+  margin-top: 0.25rem; /* Adjust spacing as needed */
+}
+
+h1, h2 {
+  font-family: var(--serif-font);
 }

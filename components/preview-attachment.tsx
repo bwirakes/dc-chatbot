@@ -1,6 +1,22 @@
 import type { Attachment } from 'ai';
 
-import { LoaderIcon } from './icons';
+import { LoaderIcon, FileIcon, ImageIcon } from './icons';
+
+// Helper function to get appropriate icon for file type
+const getFileIcon = (contentType: string) => {
+  if (contentType.startsWith('image')) {
+    return <ImageIcon />;
+  } else if (contentType === 'application/pdf') {
+    return <FileIcon />;
+  } else if (
+    contentType === 'application/msword' || 
+    contentType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ) {
+    return <FileIcon />;
+  } else {
+    return <FileIcon />;
+  }
+};
 
 export const PreviewAttachment = ({
   attachment,
@@ -25,10 +41,19 @@ export const PreviewAttachment = ({
               className="rounded-md size-full object-cover"
             />
           ) : (
-            <div className="" />
+            <div className="flex items-center justify-center">
+              {getFileIcon(contentType)}
+              <span className="text-xs ml-1 text-zinc-500">
+                {contentType === 'application/pdf' ? 'PDF' : 
+                 contentType.includes('word') ? 'DOC' : 'File'}
+              </span>
+            </div>
           )
         ) : (
-          <div className="" />
+          <div className="flex items-center justify-center">
+            <FileIcon />
+            <span className="text-xs ml-1 text-zinc-500">File</span>
+          </div>
         )}
 
         {isUploading && (

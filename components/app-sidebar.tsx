@@ -2,6 +2,7 @@
 
 import type { User } from 'next-auth';
 import { useRouter } from 'next/navigation';
+import { Flower } from 'lucide-react';
 
 import { PlusIcon } from '@/components/icons';
 import { SidebarHistory } from '@/components/sidebar-history';
@@ -32,10 +33,11 @@ export function AppSidebar({ user }: { user: User | undefined }) {
               onClick={() => {
                 setOpenMobile(false);
               }}
-              className="flex flex-row gap-3 items-center"
+              className="flex flex-row gap-3 items-center group"
             >
-              <span className="text-lg font-semibold px-2 hover:bg-muted rounded-md cursor-pointer">
-                Chatbot
+              <Flower className="text-[#FF9B82] w-6 h-6 sm:w-8 sm:h-8 transition-transform group-hover:rotate-45" />
+              <span className="text-2xl sm:text-3xl font-serif text-[hsl(var(--dark-text))] font-bold" style={{ fontFamily: 'var(--serif-font)' }}>
+                Stairway
               </span>
             </Link>
             <Tooltip>

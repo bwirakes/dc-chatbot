@@ -2,7 +2,6 @@
 
 import type { Attachment, Message, UIMessage } from 'ai';
 import cx from 'classnames';
-import type React from 'react';
 import {
   useRef,
   useEffect,
@@ -16,7 +15,7 @@ import {
 import { toast } from 'sonner';
 import { useLocalStorage, useWindowSize } from 'usehooks-ts';
 
-import { ArrowUpIcon, PaperclipIcon, StopIcon } from './icons';
+import { ArrowUpIcon, PaperclipIcon, StopIcon, FileIcon, ImageIcon } from './icons';
 import { PreviewAttachment } from './preview-attachment';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
@@ -181,17 +180,16 @@ function PureMultimodalInput({
 
   return (
     <div className="relative w-full flex flex-col gap-4">
-      {messages.length === 0 &&
-        attachments.length === 0 &&
-        uploadQueue.length === 0 && (
-          <SuggestedActions append={append} chatId={chatId} />
-        )}
+      {messages.length === 0 && (
+        <SuggestedActions append={append} chatId={chatId} />
+      )}
 
       <input
         type="file"
         className="fixed -top-4 -left-4 size-0.5 opacity-0 pointer-events-none"
         ref={fileInputRef}
         multiple
+        accept="image/jpeg,image/png,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         onChange={handleFileChange}
         tabIndex={-1}
       />
@@ -273,7 +271,7 @@ export const MultimodalInput = memo(
     if (prevProps.input !== nextProps.input) return false;
     if (prevProps.status !== nextProps.status) return false;
     if (!equal(prevProps.attachments, nextProps.attachments)) return false;
-
+    if (prevProps.messages.length !== nextProps.messages.length) return false;
     return true;
   },
 );
@@ -295,6 +293,7 @@ function PureAttachmentsButton({
       }}
       disabled={status !== 'ready'}
       variant="ghost"
+      title="Upload files (Images, PDFs, Word documents)"
     >
       <PaperclipIcon size={14} />
     </Button>

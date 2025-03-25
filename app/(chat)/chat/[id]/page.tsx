@@ -4,10 +4,10 @@ import { notFound } from 'next/navigation';
 import { auth } from '@/app/(auth)/auth';
 import { Chat } from '@/components/chat';
 import { getChatById, getMessagesByChatId } from '@/lib/db/queries';
-import { DataStreamHandler } from '@/components/data-stream-handler';
 import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
 import { DBMessage } from '@/lib/db/schema';
 import { Attachment, UIMessage } from 'ai';
+import { generateUUID } from '@/lib/utils';
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -34,6 +34,15 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     id,
   });
 
+  // Initialize empty messages array or convert existing messages
+  let initialUIMessages: Array<UIMessage> = [];
+  
+  if (messagesFromDb.length > 0) {
+    // Convert existing messages from DB
+    initialUIMessages = convertToUIMessages(messagesFromDb);
+  }
+  // We no longer add an initial welcome message, allowing the suggested actions to appear
+
   function convertToUIMessages(messages: Array<DBMessage>): Array<UIMessage> {
     return messages.map((message) => ({
       id: message.id,
@@ -55,12 +64,11 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
       <>
         <Chat
           id={chat.id}
-          initialMessages={convertToUIMessages(messagesFromDb)}
+          initialMessages={initialUIMessages}
           selectedChatModel={DEFAULT_CHAT_MODEL}
           selectedVisibilityType={chat.visibility}
           isReadonly={session?.user?.id !== chat.userId}
         />
-        <DataStreamHandler id={id} />
       </>
     );
   }
@@ -69,12 +77,11 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     <>
       <Chat
         id={chat.id}
-        initialMessages={convertToUIMessages(messagesFromDb)}
+        initialMessages={initialUIMessages}
         selectedChatModel={chatModelFromCookie.value}
         selectedVisibilityType={chat.visibility}
         isReadonly={session?.user?.id !== chat.userId}
       />
-      <DataStreamHandler id={id} />
     </>
   );
 }

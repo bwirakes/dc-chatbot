@@ -16,15 +16,25 @@ import {
   vote,
   type DBMessage,
 } from './schema';
-import { ArtifactKind } from '@/components/artifact';
 
 // Optionally, if not using email/pass login, you can
 // use the Drizzle adapter for Auth.js / NextAuth
 // https://authjs.dev/reference/adapter/drizzle
 
-// biome-ignore lint: Forbidden non-null assertion.
-const client = postgres(process.env.POSTGRES_URL!);
-const db = drizzle(client);
+// Configuration for Supabase Postgres connection
+if (!process.env.POSTGRES_URL) {
+  throw new Error('POSTGRES_URL is not defined');
+}
+
+const client = postgres(process.env.POSTGRES_URL, {
+  ssl: { rejectUnauthorized: false }, // Allow self-signed certificates
+  max: 10, // Connection pool size
+  idle_timeout: 20, // Idle connection timeout in seconds
+  connect_timeout: 10, // Connection timeout in seconds
+});
+
+// Export the db instance for use in health checks and other utilities
+export const db = drizzle(client);
 
 export async function getUser(email: string): Promise<Array<User>> {
   try {
@@ -180,7 +190,7 @@ export async function saveDocument({
 }: {
   id: string;
   title: string;
-  kind: ArtifactKind;
+  kind: string;
   content: string;
   userId: string;
 }) {

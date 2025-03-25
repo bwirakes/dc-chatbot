@@ -1,179 +1,203 @@
-import { TerminalWindowIcon, LoaderIcon, CrossSmallIcon } from './icons';
-import { Button } from './ui/button';
+'use client';
+
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Dispatch,
-  SetStateAction,
+  memo,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
+import { useLocalStorage } from 'usehooks-ts';
+import { ArrowDownIcon, Command } from './icons';
 import { cn } from '@/lib/utils';
-import { useArtifactSelector } from '@/hooks/use-artifact';
 
-export interface ConsoleOutputContent {
-  type: 'text' | 'image';
-  value: string;
-}
-
-export interface ConsoleOutput {
+interface ConsoleLog {
   id: string;
-  status: 'in_progress' | 'loading_packages' | 'completed' | 'failed';
-  contents: Array<ConsoleOutputContent>;
+  type: 'stdout' | 'stderr' | 'output';
+  message: string;
 }
 
-interface ConsoleProps {
-  consoleOutputs: Array<ConsoleOutput>;
-  setConsoleOutputs: Dispatch<SetStateAction<Array<ConsoleOutput>>>;
-}
+let consoleStorage: { [key: string]: ConsoleLog[] } = {};
 
-export function Console({ consoleOutputs, setConsoleOutputs }: ConsoleProps) {
-  const [height, setHeight] = useState<number>(300);
-  const [isResizing, setIsResizing] = useState(false);
-  const consoleEndRef = useRef<HTMLDivElement>(null);
+type ConsoleProps = {
+  id: string;
+};
 
-  const isArtifactVisible = useArtifactSelector((state) => state.isVisible);
+function PureConsole({ id }: ConsoleProps) {
+  const [consoleOutputs, setConsoleOutputs] = useLocalStorage<
+    Record<string, Array<ConsoleLog>>
+  >('console-outputs', {});
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [internalOutputs, setInternalOutputs] = useState<
+    Array<ConsoleLog> | null
+  >(consoleStorage[id] || null);
+  const consoleRef = useRef<HTMLDivElement>(null);
 
-  const minHeight = 100;
-  const maxHeight = 800;
+  const outputs = useMemo(() => {
+    const fromLocalStorage = consoleOutputs[id] || [];
+    const fromMemoryStorage = internalOutputs || [];
 
-  const startResizing = useCallback(() => {
-    setIsResizing(true);
-  }, []);
+    return [...fromLocalStorage, ...fromMemoryStorage].slice(-50);
+  }, [consoleOutputs, id, internalOutputs]);
 
-  const stopResizing = useCallback(() => {
-    setIsResizing(false);
-  }, []);
-
-  const resize = useCallback(
-    (e: MouseEvent) => {
-      if (isResizing) {
-        const newHeight = window.innerHeight - e.clientY;
-        if (newHeight >= minHeight && newHeight <= maxHeight) {
-          setHeight(newHeight);
-        }
+  const registerConsoleListener = useCallback(
+    (id: string) => {
+      // Set up console listener
+      if (!consoleStorage[id]) {
+        consoleStorage[id] = [];
       }
+
+      const listener = (event: MessageEvent) => {
+        if (event.data.type === 'console' && event.data.codeId === id) {
+          const { level, args, codeId } = event.data;
+          const message = typeof args === 'string' ? args : args[0];
+
+          consoleStorage[codeId] = [
+            ...(consoleStorage[codeId] || []),
+            {
+              id: Math.random().toString(36).substring(7),
+              message,
+              type: level === 'error' ? 'stderr' : 'stdout',
+            },
+          ];
+
+          setInternalOutputs([...(consoleStorage[codeId] || [])]);
+        }
+      };
+
+      window.addEventListener('message', listener);
+
+      return {
+        destroy: () => {
+          window.removeEventListener('message', listener);
+        },
+      };
     },
-    [isResizing],
+    [setConsoleOutputs],
   );
 
+  // Register console listener
   useEffect(() => {
-    window.addEventListener('mousemove', resize);
-    window.addEventListener('mouseup', stopResizing);
+    const controller = registerConsoleListener(id);
+    
     return () => {
-      window.removeEventListener('mousemove', resize);
-      window.removeEventListener('mouseup', stopResizing);
+      controller.destroy();
     };
-  }, [resize, stopResizing]);
+  }, [id, registerConsoleListener]);
 
+  // Scroll to bottom when new logs are added
   useEffect(() => {
-    consoleEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [consoleOutputs]);
-
-  useEffect(() => {
-    if (!isArtifactVisible) {
-      setConsoleOutputs([]);
+    if (consoleRef.current && !isMinimized) {
+      consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
     }
-  }, [isArtifactVisible, setConsoleOutputs]);
+  }, [outputs, isMinimized]);
 
-  return consoleOutputs.length > 0 ? (
-    <>
-      <div
-        className="h-2 w-full fixed cursor-ns-resize z-50"
-        onMouseDown={startResizing}
-        style={{ bottom: height - 4 }}
-        role="slider"
-        aria-valuenow={minHeight}
-      />
+  const setOutput = (message: string) => {
+    const newOutput = {
+      id: Math.random().toString(36).substring(7),
+      message,
+      type: 'output' as const,
+    };
 
-      <div
-        className={cn(
-          'fixed flex flex-col bottom-0 dark:bg-zinc-900 bg-zinc-50 w-full border-t z-40 overflow-y-scroll overflow-x-hidden dark:border-zinc-700 border-zinc-200',
-          {
-            'select-none': isResizing,
-          },
-        )}
-        style={{ height }}
+    setConsoleOutputs((currentOutputs) => {
+      const currentId = id;
+      const current = currentOutputs[currentId] || [];
+      return {
+        ...currentOutputs,
+        [currentId]: [...current, newOutput],
+      };
+    });
+  };
+
+  if (outputs.length === 0) {
+    return null;
+  }
+
+  if (isMinimized) {
+    return (
+      <motion.div
+        data-testid="console-minimized"
+        layoutId={id}
+        className="fixed bottom-0 left-0 right-0 p-2 z-20 flex flex-row items-center"
+        onClick={() => setIsMinimized(false)}
       >
-        <div className="flex flex-row justify-between items-center w-full h-fit border-b dark:border-zinc-700 border-zinc-200 px-2 py-1 sticky top-0 z-50 bg-muted">
-          <div className="text-sm pl-2 dark:text-zinc-50 text-zinc-800 flex flex-row gap-3 items-center">
-            <div className="text-muted-foreground">
-              <TerminalWindowIcon />
-            </div>
-            <div>Console</div>
+        <motion.div
+          className="cursor-pointer bg-background/95 backdrop-blur-sm flex flex-row items-center gap-2 p-2 px-3 rounded-full border"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Command size={14} />
+          <div className="text-xs text-muted-foreground">
+            {outputs.length} console outputs
           </div>
-          <Button
-            variant="ghost"
-            className="size-fit p-1 hover:dark:bg-zinc-700 hover:bg-zinc-200"
-            size="icon"
-            onClick={() => setConsoleOutputs([])}
-          >
-            <CrossSmallIcon />
-          </Button>
+        </motion.div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        data-testid="console"
+        layoutId={id}
+        className="fixed bottom-0 z-20 max-h-[300px] w-full border-t bg-background/90 backdrop-blur-sm"
+        initial={{ y: 300 }}
+        animate={{ y: 0 }}
+        exit={{ y: 300 }}
+      >
+        <div className="flex flex-row justify-between items-center p-2 border-b">
+          <div className="flex flex-row items-center">
+            <Command size={14} className="mr-2" />
+            <div className="text-sm font-mono text-muted-foreground">
+              Console
+            </div>
+          </div>
+
+          <div className="flex flex-row items-center gap-2">
+            <button
+              className="p-1 hover:bg-accent hover:text-accent-foreground rounded"
+              onClick={() => {
+                setConsoleOutputs((curr) => ({ ...curr, [id]: [] }));
+                consoleStorage[id] = [];
+                setInternalOutputs(null);
+              }}
+            >
+              <div className="text-xs">Clear</div>
+            </button>
+
+            <button
+              className="p-1 hover:bg-accent hover:text-accent-foreground rounded"
+              onClick={() => setIsMinimized(true)}
+            >
+              <ArrowDownIcon size={14} className="text-muted-foreground" />
+            </button>
+          </div>
         </div>
 
-        <div>
-          {consoleOutputs.map((consoleOutput, index) => (
+        <div
+          ref={consoleRef}
+          className="overflow-y-auto max-h-[240px] p-2 font-mono text-xs"
+        >
+          {outputs.map((output) => (
             <div
-              key={consoleOutput.id}
-              className="px-4 py-2 flex flex-row text-sm border-b dark:border-zinc-700 border-zinc-200 dark:bg-zinc-900 bg-zinc-50 font-mono"
+              key={output.id}
+              className={cn('whitespace-pre-wrap mb-1', {
+                'text-red-500': output.type === 'stderr',
+                'text-muted-foreground': output.type === 'stdout',
+                'text-green-500': output.type === 'output',
+              })}
             >
-              <div
-                className={cn('w-12 shrink-0', {
-                  'text-muted-foreground': [
-                    'in_progress',
-                    'loading_packages',
-                  ].includes(consoleOutput.status),
-                  'text-emerald-500': consoleOutput.status === 'completed',
-                  'text-red-400': consoleOutput.status === 'failed',
-                })}
-              >
-                [{index + 1}]
-              </div>
-              {['in_progress', 'loading_packages'].includes(
-                consoleOutput.status,
-              ) ? (
-                <div className="flex flex-row gap-2">
-                  <div className="animate-spin size-fit self-center mb-auto mt-0.5">
-                    <LoaderIcon />
-                  </div>
-                  <div className="text-muted-foreground">
-                    {consoleOutput.status === 'in_progress'
-                      ? 'Initializing...'
-                      : consoleOutput.status === 'loading_packages'
-                        ? consoleOutput.contents.map((content) =>
-                            content.type === 'text' ? content.value : null,
-                          )
-                        : null}
-                  </div>
-                </div>
-              ) : (
-                <div className="dark:text-zinc-50 text-zinc-900 w-full flex flex-col gap-2 overflow-x-scroll">
-                  {consoleOutput.contents.map((content, index) =>
-                    content.type === 'image' ? (
-                      <picture key={`${consoleOutput.id}-${index}`}>
-                        <img
-                          src={content.value}
-                          alt="output"
-                          className="rounded-md max-w-screen-toast-mobile w-full"
-                        />
-                      </picture>
-                    ) : (
-                      <div
-                        key={`${consoleOutput.id}-${index}`}
-                        className="whitespace-pre-line break-words w-full"
-                      >
-                        {content.value}
-                      </div>
-                    ),
-                  )}
-                </div>
-              )}
+              {output.message}
             </div>
           ))}
-          <div ref={consoleEndRef} />
         </div>
-      </div>
-    </>
-  ) : null;
+      </motion.div>
+    </AnimatePresence>
+  );
 }
+
+export const Console = memo(PureConsole);

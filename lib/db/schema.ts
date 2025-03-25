@@ -105,7 +105,7 @@ export type Vote = InferSelectModel<typeof vote>;
 export const document = pgTable(
   'Document',
   {
-    id: uuid('id').notNull().defaultRandom(),
+    id: uuid('id').notNull(),
     createdAt: timestamp('createdAt').notNull(),
     title: text('title').notNull(),
     content: text('content'),
