@@ -4,6 +4,7 @@ import { genSaltSync, hashSync } from 'bcrypt-ts';
 import { and, asc, desc, eq, gt, gte, inArray } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
+import { getOrSetCache, deleteCache, deleteCacheByPattern } from '../redis/cache';
 
 import {
   user,
@@ -36,12 +37,77 @@ const client = postgres(process.env.POSTGRES_URL, {
 // Export the db instance for use in health checks and other utilities
 export const db = drizzle(client);
 
+// Cache TTL constants (in seconds)
+const CACHE_TTL = {
+  USER: 60 * 60, // 1 hour
+  CHAT: 60 * 5, // 5 minutes
+  MESSAGES: 60 * 2, // 2 minutes
+  DOCUMENT: 60 * 10, // 10 minutes
+  VOTES: 60 * 5, // 5 minutes
+};
+
 export async function getUser(email: string): Promise<Array<User>> {
+  const cacheKey = `user:${email}`;
+  
+  return getOrSetCache(
+    cacheKey,
+    async () => {
+      try {
+        return await db.select().from(user).where(eq(user.email, email));
+      } catch (error) {
+        console.error('Failed to get user from database');
+        throw error;
+      }
+    },
+    CACHE_TTL.USER
+  );
+}
+
+export async function getUserById(id: string): Promise<User | null> {
+  const cacheKey = `user:id:${id}`;
+  
+  return getOrSetCache(
+    cacheKey,
+    async () => {
+      try {
+        const users = await db.select().from(user).where(eq(user.id, id));
+        return users.length > 0 ? users[0] : null;
+      } catch (error) {
+        console.error('Failed to get user by id from database', error);
+        return null;
+      }
+    },
+    CACHE_TTL.USER
+  );
+}
+
+export async function ensureUserExists(id: string, email: string): Promise<boolean> {
   try {
-    return await db.select().from(user).where(eq(user.email, email));
+    // Check if user exists
+    const existingUser = await getUserById(id);
+    
+    // If user already exists, return true
+    if (existingUser) {
+      return true;
+    }
+    
+    // Create a temporary user with basic information
+    await db.insert(user).values({
+      id, // Use the provided ID
+      email: email || `temporary-${id}@example.com`,
+      // No password is set, this user can only be accessed via session
+    });
+    
+    // Invalidate cache
+    await deleteCache(`user:id:${id}`);
+    if (email) {
+      await deleteCache(`user:${email}`);
+    }
+    
+    return true;
   } catch (error) {
-    console.error('Failed to get user from database');
-    throw error;
+    console.error('Failed to ensure user exists in database', error);
+    return false;
   }
 }
 
@@ -50,7 +116,10 @@ export async function createUser(email: string, password: string) {
   const hash = hashSync(password, salt);
 
   try {
-    return await db.insert(user).values({ email, password: hash });
+    const result = await db.insert(user).values({ email, password: hash });
+    // Invalidate any cached user data
+    await deleteCache(`user:${email}`);
+    return result;
   } catch (error) {
     console.error('Failed to create user in database');
     throw error;
@@ -67,12 +136,18 @@ export async function saveChat({
   title: string;
 }) {
   try {
-    return await db.insert(chat).values({
+    const result = await db.insert(chat).values({
       id,
       createdAt: new Date(),
       userId,
       title,
     });
+    
+    // Invalidate chat cache
+    await deleteCache(`chat:${id}`);
+    await deleteCacheByPattern(`chats:user:${userId}*`);
+    
+    return result;
   } catch (error) {
     console.error('Failed to save chat in database');
     throw error;
@@ -81,10 +156,22 @@ export async function saveChat({
 
 export async function deleteChatById({ id }: { id: string }) {
   try {
+    // Get chat to access userId for cache invalidation
+    const chatData = await getChatById({ id });
+    
     await db.delete(vote).where(eq(vote.chatId, id));
     await db.delete(message).where(eq(message.chatId, id));
-
-    return await db.delete(chat).where(eq(chat.id, id));
+    const result = await db.delete(chat).where(eq(chat.id, id));
+    
+    // Invalidate caches
+    await deleteCache(`chat:${id}`);
+    await deleteCacheByPattern(`messages:chat:${id}*`);
+    await deleteCacheByPattern(`votes:chat:${id}*`);
+    if (chatData?.userId) {
+      await deleteCacheByPattern(`chats:user:${chatData.userId}*`);
+    }
+    
+    return result;
   } catch (error) {
     console.error('Failed to delete chat by id from database');
     throw error;
@@ -92,26 +179,42 @@ export async function deleteChatById({ id }: { id: string }) {
 }
 
 export async function getChatsByUserId({ id }: { id: string }) {
-  try {
-    return await db
-      .select()
-      .from(chat)
-      .where(eq(chat.userId, id))
-      .orderBy(desc(chat.createdAt));
-  } catch (error) {
-    console.error('Failed to get chats by user from database');
-    throw error;
-  }
+  const cacheKey = `chats:user:${id}`;
+  
+  return getOrSetCache(
+    cacheKey,
+    async () => {
+      try {
+        return await db
+          .select()
+          .from(chat)
+          .where(eq(chat.userId, id))
+          .orderBy(desc(chat.createdAt));
+      } catch (error) {
+        console.error('Failed to get chats by user from database');
+        throw error;
+      }
+    },
+    CACHE_TTL.CHAT
+  );
 }
 
 export async function getChatById({ id }: { id: string }) {
-  try {
-    const [selectedChat] = await db.select().from(chat).where(eq(chat.id, id));
-    return selectedChat;
-  } catch (error) {
-    console.error('Failed to get chat by id from database');
-    throw error;
-  }
+  const cacheKey = `chat:${id}`;
+  
+  return getOrSetCache(
+    cacheKey,
+    async () => {
+      try {
+        const [selectedChat] = await db.select().from(chat).where(eq(chat.id, id));
+        return selectedChat;
+      } catch (error) {
+        console.error('Failed to get chat by id from database');
+        throw error;
+      }
+    },
+    CACHE_TTL.CHAT
+  );
 }
 
 export async function saveMessages({
@@ -120,7 +223,15 @@ export async function saveMessages({
   messages: Array<DBMessage>;
 }) {
   try {
-    return await db.insert(message).values(messages);
+    const result = await db.insert(message).values(messages);
+    
+    // Invalidate messages cache for each affected chat
+    const chatIds = [...new Set(messages.map(m => m.chatId))];
+    for (const chatId of chatIds) {
+      await deleteCacheByPattern(`messages:chat:${chatId}*`);
+    }
+    
+    return result;
   } catch (error) {
     console.error('Failed to save messages in database', error);
     throw error;
@@ -128,16 +239,24 @@ export async function saveMessages({
 }
 
 export async function getMessagesByChatId({ id }: { id: string }) {
-  try {
-    return await db
-      .select()
-      .from(message)
-      .where(eq(message.chatId, id))
-      .orderBy(asc(message.createdAt));
-  } catch (error) {
-    console.error('Failed to get messages by chat id from database', error);
-    throw error;
-  }
+  const cacheKey = `messages:chat:${id}`;
+  
+  return getOrSetCache(
+    cacheKey,
+    async () => {
+      try {
+        return await db
+          .select()
+          .from(message)
+          .where(eq(message.chatId, id))
+          .orderBy(asc(message.createdAt));
+      } catch (error) {
+        console.error('Failed to get messages by chat id from database', error);
+        throw error;
+      }
+    },
+    CACHE_TTL.MESSAGES
+  );
 }
 
 export async function voteMessage({
@@ -173,12 +292,20 @@ export async function voteMessage({
 }
 
 export async function getVotesByChatId({ id }: { id: string }) {
-  try {
-    return await db.select().from(vote).where(eq(vote.chatId, id));
-  } catch (error) {
-    console.error('Failed to get votes by chat id from database', error);
-    throw error;
-  }
+  const cacheKey = `votes:chat:${id}`;
+  
+  return getOrSetCache(
+    cacheKey,
+    async () => {
+      try {
+        return await db.select().from(vote).where(eq(vote.chatId, id));
+      } catch (error) {
+        console.error('Failed to get votes by chat id from database', error);
+        throw error;
+      }
+    },
+    CACHE_TTL.VOTES
+  );
 }
 
 export async function saveDocument({

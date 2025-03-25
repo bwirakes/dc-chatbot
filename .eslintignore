@@ -1,0 +1,22 @@
+# Ignore node_modules
+node_modules
+
+# Ignore build outputs
+.next
+out
+dist
+build
+coverage
+
+# Ignore generated files
+*.generated.*
+*.d.ts
+
+# Ignore scripts directory
+scripts/*.js
+
+# Ignore configuration files
+*.config.js
+*.config.mjs
+next.config.js
+next.config.ts 
