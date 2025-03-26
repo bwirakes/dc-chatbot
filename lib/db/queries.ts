@@ -317,7 +317,7 @@ export async function saveDocument({
 }: {
   id: string;
   title: string;
-  kind: string;
+  kind: 'text' | 'code' | 'image' | 'sheet';
   content: string;
   userId: string;
 }) {
