@@ -6,6 +6,11 @@ import { getUser } from '@/lib/db/queries';
 
 import { authConfig } from './auth.config';
 
+// Verify that AUTH_SECRET is set in production
+if (process.env.NODE_ENV === 'production' && !process.env.AUTH_SECRET) {
+  throw new Error('AUTH_SECRET environment variable is not set in production. Please set it in your environment variables. Generate a random secret using `openssl rand -base64 32` or https://generate-secret.vercel.app/32');
+}
+
 interface ExtendedSession extends Session {
   user: User;
 }
