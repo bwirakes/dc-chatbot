@@ -12,27 +12,33 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const isOnChat = nextUrl.pathname.startsWith('/');
-      const isOnRegister = nextUrl.pathname.startsWith('/register');
-      const isOnLogin = nextUrl.pathname.startsWith('/login');
+      const pathname = nextUrl.pathname;
+      
+      // Check for auth-specific paths using more precise checks
+      const isOnLogin = pathname === '/login';
+      const isOnRegister = pathname === '/register';
+      const isOnAuthPage = isOnLogin || isOnRegister;
+      
+      // Root page and specific chat routes
+      const isOnRootPage = pathname === '/';
+      const isOnChatRoute = pathname.match(/^\/[a-zA-Z0-9-]+$/) !== null;
 
-      if (isLoggedIn && (isOnLogin || isOnRegister)) {
-        return Response.redirect(new URL('/', nextUrl as unknown as URL));
+      // If user is logged in and trying to access auth pages, redirect to home
+      if (isLoggedIn && isOnAuthPage) {
+        return Response.redirect(new URL('/', nextUrl));
       }
 
-      if (isOnRegister || isOnLogin) {
-        return true; // Always allow access to register and login pages
+      // Always allow access to auth pages (login/register) for non-logged in users
+      if (isOnAuthPage) {
+        return true;
       }
 
-      if (isOnChat) {
-        if (isLoggedIn) return true;
-        return false; // Redirect unauthenticated users to login page
+      // Protected routes check
+      if (isOnRootPage || isOnChatRoute) {
+        return isLoggedIn;
       }
 
-      if (isLoggedIn) {
-        return Response.redirect(new URL('/', nextUrl as unknown as URL));
-      }
-
+      // All other routes should be accessible
       return true;
     },
   },
